@@ -21,4 +21,7 @@ for nomeH, heur in heuristicas.items():
     rota = heur(matriz, n)
     custoInicial = calcular_custo_rota(rota, matriz)
     melhorRota, melhorCusto = branch_and_bound_tsplib(matriz, rota)
-    print(f"{nomeH}: rota={custoInicial} | bnb={melhorCusto}")
+
+    print(f"{nomeH}:")
+    print(f" rota inicial : {rota} | custo = {custoInicial}")
+    print(f" melhor rota : {melhorRota} | custo = {melhorCusto}")
