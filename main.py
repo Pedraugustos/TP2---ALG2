@@ -5,6 +5,8 @@ from branch_and_bound.BABbase import calcular_custo_rota, branch_and_bound_tspli
 from heuristicas_aproximacoes.christofides import aproximacao_christofides
 #from trivial import construir_solucao_trivial
 
+from heuristicas_aproximacoes.twice_around_the_tree import aproximacao_twice_around_the_tree
+
 
 caminho = sys.argv[1]
 nome, coords, matriz = ler_instancia_tsplib(caminho)
@@ -14,7 +16,8 @@ print(f"Instancia: {nome} | Vertices: {n}\n")
 
 heuristicas = {
     #"trivial": construir_solucao_trivial,
-    "christofides": aproximacao_christofides
+    "christofides": aproximacao_christofides,
+    #"twice_around_the_tree": aproximacao_twice_around_the_tree
 }
 
 for nomeH, heur in heuristicas.items():
