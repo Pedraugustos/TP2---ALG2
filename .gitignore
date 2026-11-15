@@ -1,0 +1,25 @@
+# bytecode / cache do Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ambientes virtuais
+.venv/
+venv/
+env/
+
+# caches de ferramentas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# VS Code
+.vscode/
+
+# arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# instâncias compactadas / grandes (opcional)
+*.tsp.gz
