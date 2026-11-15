@@ -1,2 +1,2 @@
 EXEMPLO:
-python main.py branch_and_bound\berlin52.tsp
+python main.py instancias\berlin52.tsp
