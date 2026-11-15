@@ -1,6 +1,6 @@
 import sys
 
-from leitor import ler_instancia_tsplib
+from leitor.leitor import ler_instancia_tsplib
 from branch_and_bound.BABbase import calcular_custo_rota, branch_and_bound_tsplib
 from heuristicas_aproximacoes.christofides import aproximacao_christofides
 #from trivial import construir_solucao_trivial
