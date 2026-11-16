@@ -9,6 +9,8 @@ from heuristicas_aproximacoes.twice_around_the_tree import aproximacao_twice_aro
 
 from heuristicas_aproximacoes.convex_hull import heuristica_convex_hull
 
+from heuristicas_aproximacoes.gulosa import heuristica_gulosa
+
 
 caminho = sys.argv[1]
 nome, coords, matriz = ler_instancia_tsplib(caminho)
@@ -20,7 +22,8 @@ heuristicas = {
     #"trivial": construir_solucao_trivial,
     #"christofides": aproximacao_christofides,
     #"twice_around_the_tree": aproximacao_twice_around_the_tree
-    "convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
+    #"convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
+    "gulosa": heuristica_gulosa
 }
 
 for nomeH, heur in heuristicas.items():
