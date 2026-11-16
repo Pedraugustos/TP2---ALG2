@@ -1,6 +1,8 @@
 import sys
+import csv
 
-from analise.analise import Contador, EstatisticasBAB
+from analise.tempo import Contador, EstatisticasBAB
+from analise.geometria import extrair_features
 from leitor.leitor import ler_instancia_tsplib
 from branch_and_bound.BABbase import branch_and_bound_tsplib
 from heuristicas_aproximacoes.christofides import aproximacao_christofides
@@ -14,21 +16,23 @@ caminho = sys.argv[1]
 nome, coords, matriz = ler_instancia_tsplib(caminho)
 n = len(coords)
 
-# lista que acumula todas as linhas de saida
-linhas = []
-linhas.append(f"Instancia: {nome} | Vertices: {n}")
-linhas.append("")
+# extrair features UMA VEZ por instancia (nao depende da heuristica)
+features = extrair_features(coords, matriz, n)
+
+print(f"Instancia: {nome} | Vertices: {n}")
+print(f"features: {features}\n")
 
 heuristicas = {
-    "trivial": lambda m, n: construir_solucao_trivial(n),
+    #"trivial": lambda m, n: construir_solucao_trivial(n),
     "christofides": aproximacao_christofides,
-    "twice_around_the_tree": aproximacao_twice_around_the_tree,
-    "convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
-    "gulosa": heuristica_gulosa
+    #"twice_around_the_tree": aproximacao_twice_around_the_tree,
+    #"convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
+    #"gulosa": heuristica_gulosa,
 }
 
+resultados = []
+
 for nomeH, heur in heuristicas.items():
-    # instanciar metricas por heuristica (para comparar warm-start)
     contador = Contador()
     estatisticas = EstatisticasBAB()
 
@@ -42,22 +46,37 @@ for nomeH, heur in heuristicas.items():
             matriz, rota, contador=contador, estatisticas=estatisticas
         )
 
-    # 3. acumular resultado + metricas
-    linhas.append(f"{nomeH}:")
-    linhas.append(f" rota inicial : {rota} | custo = {custoInicial}")
-    linhas.append(f" melhor rota  : {melhorRota} | custo = {melhorCusto}")
-    linhas.append(f" {estatisticas.relatorio()}")
-    linhas.append(f" tempo heuristica = {contador.tempos.get(f'heuristica_{nomeH}', 0.0):.4f}s")
-    linhas.append(f" tempo bnb        = {contador.tempos.get('bnb_total', 0.0):.4f}s")
-    linhas.append(
-        f" tempo bound      = {contador.tempos.get('bound_caminho', 0.0):.4f}s"
-        f" | chamadas = {contador.chamadas.get('bound_caminho', 0)}"
-    )
-    linhas.append("")
+    # 3. montar dicionario com TODAS as metricas + features
+    resultado = {
+        "instancia": nome,
+        "n": n,
+        "heuristica": nomeH,
+        "custoInicial": custoInicial,
+        "melhorCusto": melhorCusto,
+        "tempoHeuristica": contador.tempos.get(f"heuristica_{nomeH}", 0.0),
+        "tempoBAB": contador.tempos.get("bnb_total", 0.0),
+        "tempoBound": contador.tempos.get("bound_caminho", 0.0),
+        "chamadasBound": contador.chamadas.get("bound_caminho", 0),
+        "nosGerados": estatisticas.nosGerados,
+        "nosExpandidos": estatisticas.nosExpandidos,
+        "nosPodados": estatisticas.nosPodados,
+        "nosFolha": estatisticas.nosFolha,
+        "nosPodaAntecipada": estatisticas.nosPodaAntecipada,
+        **features,
+    }
+    resultados.append(resultado)
 
-# escrever tudo no arquivo .txt com nome baseado na instancia
-nomeArquivoSaida = f"{nome}.txt"
-with open(nomeArquivoSaida, "w") as arquivo:
-    arquivo.write("\n".join(linhas))
+    print(f"{nomeH}: inicial={custoInicial} | melhor={melhorCusto}")
+    print(f"  {estatisticas.relatorio()}")
+    print(f"  tempo heur={resultado['tempoHeuristica']:.4f}s | tempo bnb={resultado['tempoBAB']:.4f}s")
+    print()
 
-print(f"Resultados salvos em {nomeArquivoSaida}")
+# salvar CSV com nome baseado na instancia (sem .tsp)
+nomeBase = nome.replace(".tsp", "")
+nomeCsv = f"{nomeBase}.csv"
+with open(nomeCsv, "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=resultados[0].keys())
+    writer.writeheader()
+    writer.writerows(resultados)
+
+print(f"Resultados salvos em {nomeCsv}")

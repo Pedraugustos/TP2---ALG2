@@ -1,0 +1,2 @@
+instancia,n,heuristica,custoInicial,melhorCusto,tempoHeuristica,tempoBAB,tempoBound,chamadasBound,nosGerados,nosExpandidos,nosPodados,nosFolha,nosPodaAntecipada,aspectRatio,propFecho,entropia,grauMaxMST,cvNN
+ulysses16.tsp,16,christofides,6983,6859.0,0.006569599994691089,1479.4967143000104,1384.7398682658968,26378775,6682653,6682653,2551016,1,19696122,0.24713010204081634,0.4375,0.625,3,1.311947633210184
