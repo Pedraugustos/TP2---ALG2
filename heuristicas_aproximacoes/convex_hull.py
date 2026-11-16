@@ -15,8 +15,7 @@ def produto_vetorial(o, a, b):
 
 def fecho_convexo_monotone_chain(coordenadas):
     """
-    Calcula o fecho convexo dos pontos pelo algoritmo Monotone Chain (Andrew),
-    em O(n log n), usando apenas Python puro.
+    Calcula o fecho convexo dos pontos pelo algoritmo Monotone Chain (Andrew).
 
     Pontos colineares sobre as arestas do fecho são descartados; eles serão
     tratados depois como vértices internos e inseridos pela heurística.
@@ -39,18 +38,14 @@ def fecho_convexo_monotone_chain(coordenadas):
     # cadeia inferior
     inferior = []
     for v in ids:
-        while len(inferior) >= 2 and produto_vetorial(
-            coordenadas[inferior[-2]], coordenadas[inferior[-1]], coordenadas[v]
-        ) <= 0:
+        while len(inferior) >= 2 and produto_vetorial(coordenadas[inferior[-2]], coordenadas[inferior[-1]], coordenadas[v]) <= 0:
             inferior.pop()
         inferior.append(v)
 
     # cadeia superior
     superior = []
     for v in reversed(ids):
-        while len(superior) >= 2 and produto_vetorial(
-            coordenadas[superior[-2]], coordenadas[superior[-1]], coordenadas[v]
-        ) <= 0:
+        while len(superior) >= 2 and produto_vetorial(coordenadas[superior[-2]], coordenadas[superior[-1]], coordenadas[v]) <= 0:
             superior.pop()
         superior.append(v)
 
@@ -70,7 +65,7 @@ def fecho_convexo_monotone_chain(coordenadas):
 
 def heuristica_convex_hull(matrizDistancias, n, coordenadas):
     """
-    Heurística de Inserção Baseada em Fecho Convexo (Convex Hull) para o TSP.
+    Heurística de inserção baseada em fecho Convexo (Convex Hull) para o TSP.
 
     Monta uma sub-rota inicial com os vértices do fecho convexo e, em seguida,
     insere gulosamente os vértices internos: a cada passo, escolhe o par
@@ -109,11 +104,8 @@ def heuristica_convex_hull(matrizDistancias, n, coordenadas):
             for posicao in range(tamanho):
                 i = subRota[posicao]
                 j = subRota[(posicao + 1) % tamanho]
-                custoInsercao = (
-                    matrizDistancias[i][k]
-                    + matrizDistancias[k][j]
-                    - matrizDistancias[i][j]
-                )
+                custoInsercao = matrizDistancias[i][k] + matrizDistancias[k][j] - matrizDistancias[i][j]
+                
                 if custoInsercao < melhorCusto:
                     melhorCusto = custoInsercao
                     melhorVertice = k

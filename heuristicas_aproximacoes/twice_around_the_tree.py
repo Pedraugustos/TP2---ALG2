@@ -4,8 +4,6 @@ import networkx as nx
 def aproximacao_twice_around_the_tree(matrizDistancias, n):
     """
     Algoritmo aproximado de Twice-Around-the-Tree para o TSP com métrica.
-    Gera uma rota inicial que serve como limitante superior para o
-    Branch and Bound.
 
     Entrada:
         matrizDistancias: matriz (n+1) x (n+1) de distâncias (índice 0 ignorado).

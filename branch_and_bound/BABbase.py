@@ -25,17 +25,17 @@ def calcular_custo_rota(rota, matrizDistancias):
 def bound_caminho(matrizDistancias, n, caminho):
     """
     Calcula um limitante inferior, considerando as arestas já
-    fixadas no caminho e restringindo as candidatas de cada vértice.
+    fixadas noh caminho e restringindo as candidatas de cada vértice.
 
     Regras por vértice:
       - primeiro do caminho: aresta fixada + menor aresta incidente que não
-        seja a fixada e não va para vertice interno (saturado);
+        seja a fixada e não vai para vértice interno (saturado);
       - último do caminho: mesma ideia, mas para a saída;
-      - internos: já saturados (contribução no custo fixo);
+      - internos: já saturados (contribução noh custo fixo);
       - não visitados: as duas menores arestas incidentes permitidas.
 
-    O bound e o custo fixo do caminho mais metade da soma das arestas
-    faltantes (a divisão por 2 corrige a contagem dupla).
+    O bound e o custo fixo do caminho mais metade da soma das
+    arestas faltantes (divisão por 2 corrige a contagem dupla).
 
     Entrada:
         matrizDistancias: matriz (n+1) x (n+1) de distâncias.
@@ -51,7 +51,7 @@ def bound_caminho(matrizDistancias, n, caminho):
     custoFixo = 0.0
     grau = {v: 0 for v in range(1, n + 1)}
 
-    # contabilizar arestas ja fixadas no caminho e seus graus
+    # contabilizar arestas ja fixadas noh caminho e seus graus
     for a, b in zip(caminho, caminho[1:]):
         grau[a] += 1
         grau[b] += 1
@@ -87,7 +87,7 @@ def bound_caminho(matrizDistancias, n, caminho):
                 continue
             candidatos.append(matrizDistancias[v][u])
 
-        # se nao ha arestas suficientes, caminho e inviavel
+        # se nao ha arestas suficientes, caminho eh inviavel
         candidatos.sort()
         if len(candidatos) < faltam:
             return INF
@@ -99,7 +99,7 @@ def bound_caminho(matrizDistancias, n, caminho):
     return custoFixo + soma / 2.0
 
 
-def branch_and_bound_tsplib(matrizDistancias, rotaInicial):
+def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estatisticas=None):
     """
     Resolve o TSP por Branch and Bound.
     Usa a rota inicial recebida como limitante superior e o limitante
@@ -111,7 +111,13 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial):
     Entrada:
         matrizDistancias: matriz (n+1) x (n+1) de distâncias euclidianas.
         rotaInicial: lista de n+1 vértices (primeiro repetido no fim) com
-        uma rota fechada válida, usada como limitante superior inicial.
+            uma rota fechada válida, usada como limitante superior inicial.
+        contador: objeto Contador opcional; se fornecido, mede o tempo de
+            bound_caminho (rotulo "bound_caminho") e do BAB (rotulo
+            "bnb_total" e "copia_caminho").
+        estatisticas: objeto EstatisticasBAB opcional; se fornecido, contabiliza
+            nosGerados, nosExpandidos, nosPodados, nosFolha e
+            nosPodaAntecipada.
 
     Saída:
         melhorRota: melhor ciclo hamiltoniano encontrado (fechado).
@@ -124,40 +130,55 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial):
 
     # rota inicial obrigatoria como limitante superior
     melhorRota = rotaInicial[:]
-    melhorCusto = calcular_custo_rota(rotaInicial, matrizDistancias)
+    custoInicial = calcular_custo_rota(rotaInicial, matrizDistancias)
+    melhorCusto = custoInicial
 
     # limitante inferior inicial do caminho raiz [inicio]
     caminhoRaiz = [inicio]
-    boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
+    if contador is not None:
+        with contador.medir("bound_caminho"):
+            boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
+    else:
+        boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
 
     # fila de prioridade (min-heap) de subproblemas:
-    # (bound, nivel, custoFixo, caminhoParcial)
+    # (bound, nivel, contadorDesempate, custoFixo, caminhoParcial)
     # o contador de desempate evita comparar listas quando bounds empatam
     contadorDesempate = 0
     filaPrioridade = []
-    heapq.heappush(
-        filaPrioridade,
-        (boundRaiz, len(caminhoRaiz), contadorDesempate, 0.0, caminhoRaiz),
-    )
+    
+    heapq.heappush(filaPrioridade, (boundRaiz, len(caminhoRaiz), contadorDesempate, 0.0, caminhoRaiz))
     contadorDesempate += 1
 
-    # expansao best-first: sempre retirar o no de menor bound
+    # raiz conta como noh gerado (foi inserida na fila)
+    if estatisticas is not None:
+        estatisticas.nosGerados += 1
+
+    # expansao best-first: sempre retirar o noh de menor bound
     while filaPrioridade:
         boundAtual, nivelAtual, _, custoFixo, caminho = heapq.heappop(filaPrioridade)
 
-        # poda: descartar no se ja nao pode superar o melhor conhecido
+        # noh retirado da fila: conta como expandido
+        if estatisticas is not None:
+            estatisticas.nosExpandidos += 1
+
+        # poda: descartar noh se ja nao pode superar o melhor conhecido
         if boundAtual >= melhorCusto:
+            if estatisticas is not None:
+                estatisticas.nosPodados += 1
             continue
 
         # folha: caminho completo, fechar ciclo e comparar
         if nivelAtual == n:
+            if estatisticas is not None:
+                estatisticas.nosFolha += 1
             custoRota = custoFixo + matrizDistancias[caminho[-1]][inicio]
             if custoRota < melhorCusto:
                 melhorCusto = custoRota
                 melhorRota = caminho[:] + [inicio]
             continue
 
-        # no interno: ramificar para todos os proximos vertices nao visitados
+        # noh interno: ramificar para todos os proximos vertices nao visitados
         ultimo = caminho[-1]
         verticesRestantes = [v for v in range(1, n + 1) if v not in caminho]
 
@@ -168,7 +189,12 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial):
 
             novoCaminho = caminho + [proximo]
             novoCustoFixo = custoFixo + matrizDistancias[ultimo][proximo]
-            novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
+
+            if contador is not None:
+                with contador.medir("bound_caminho"):
+                    novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
+            else:
+                novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
 
             # so empilhar se o bound do filho ainda permite bater o melhor
             if novoBound < melhorCusto:
@@ -177,5 +203,11 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial):
                     (novoBound, len(novoCaminho), contadorDesempate, novoCustoFixo, novoCaminho),
                 )
                 contadorDesempate += 1
+                if estatisticas is not None:
+                    estatisticas.nosGerados += 1
+            else:
+                # poda antecipada: filho nao entra na fila
+                if estatisticas is not None:
+                    estatisticas.nosPodaAntecipada += 1
 
-    return melhorRota, melhorCusto
+    return melhorRota, melhorCusto, custoInicial

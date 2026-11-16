@@ -10,12 +10,10 @@ import networkx as nx
 def aproximacao_christofides(matrizDistancias, n):
     """
     Algoritmo aproximado de Christofides para o TSP com métrica.
-    Gera uma rota inicial (limitante superior) a partir da matriz de
-    distâncias.
+    Gera uma rota inicial (limitante superior) a partir da matriz de distâncias.
 
     Entrada:
-        matrizDistancias: matriz (n+1) x (n+1) de distâncias (índice 0
-            ignorado).
+        matrizDistancias: matriz (n+1) x (n+1) de distâncias (índice 0 ignorado).
         n: número de vértices.
 
     Saída:

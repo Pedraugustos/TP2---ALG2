@@ -1,11 +1,10 @@
 def heuristica_gulosa(matrizDistancias, n):
     """
-    Heurística Gulosa do Vizinho Mais Próximo (Nearest Neighbor) para o TSP.
+    Heurística gulosa do vizinho mais próximo (Nearest Neighbor) para o TSP.
 
     Parte do vértice 1 e, a cada passo, vai para o vértice não visitado mais
     próximo do vértice atual, até visitar todos; por fim, retorna ao vértice 1.
-    Em caso de empate, escolhe o candidato de menor identificador, o que torna
-    o algoritmo determinístico.
+    Em caso de empate, escolhe o candidato de menor identificador.
 
     Entrada:
         matrizDistancias: matriz (n+1) x (n+1) de distâncias (índice 0 ignorado).
@@ -21,13 +20,12 @@ def heuristica_gulosa(matrizDistancias, n):
     cicloH = [verticeAtual]
     visitados = {verticeAtual}
 
-    # repetir ate todos os vertices estarem na rota
+    # repetir ateh todos os vertices estarem na rota
     while len(cicloH) < n:
         melhorDistancia = float("inf")
         proximoVertice = None
 
-        # buscar o vizinho nao visitado mais proximo (ordem crescente de id
-        # com comparacao estrita garante desempate pelo menor identificador)
+        # buscar o vizinho nao visitado mais proximo
         for v in range(1, n + 1):
             if v in visitados:
                 continue
