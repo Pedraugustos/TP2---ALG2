@@ -1,5 +1,6 @@
 import sys
 import csv
+import os
 
 from analise.tempo import Contador, EstatisticasBAB
 from analise.geometria import extrair_features
@@ -11,6 +12,8 @@ from heuristicas_aproximacoes.twice_around_the_tree import aproximacao_twice_aro
 from heuristicas_aproximacoes.convex_hull import heuristica_convex_hull
 from heuristicas_aproximacoes.gulosa import heuristica_gulosa
 
+
+TEMPO_LIMITE = 30 * 60  # segundos (30 min por execucao do B&B)
 
 caminho = sys.argv[1]
 nome, coords, matriz = ler_instancia_tsplib(caminho)
@@ -42,9 +45,17 @@ for nomeH, heur in heuristicas.items():
 
     # 2. medir o B&B (injeta contador e estatisticas)
     with contador.medir("bnb_total"):
-        melhorRota, melhorCusto, custoInicial = branch_and_bound_tsplib(
-            matriz, rota, contador=contador, estatisticas=estatisticas
+        melhorRota, melhorCusto, custoInicial, terminou = branch_and_bound_tsplib(
+            matriz, rota, contador=contador, estatisticas=estatisticas,
+            tempoLimite=TEMPO_LIMITE
         )
+
+    # gap de aproximacao: erro da heuristica em relacao ao otimo (melhorCusto do B&B)
+    # se abortou por timeout, o otimo e desconhecido: gap = NA
+    if terminou:
+        gap = (custoInicial - melhorCusto) / melhorCusto if melhorCusto > 0 else 0.0
+    else:
+        gap = "NA"
 
     # 3. montar dicionario com TODAS as metricas + features
     resultado = {
@@ -52,7 +63,9 @@ for nomeH, heur in heuristicas.items():
         "n": n,
         "heuristica": nomeH,
         "custoInicial": custoInicial,
-        "melhorCusto": melhorCusto,
+        "melhorCusto": melhorCusto if terminou else "NA",
+        "gap": gap,
+        "terminou": terminou,
         "tempoHeuristica": contador.tempos.get(f"heuristica_{nomeH}", 0.0),
         "tempoBAB": contador.tempos.get("bnb_total", 0.0),
         "tempoBound": contador.tempos.get("bound_caminho", 0.0),
@@ -66,14 +79,23 @@ for nomeH, heur in heuristicas.items():
     }
     resultados.append(resultado)
 
-    print(f"{nomeH}: inicial={custoInicial} | melhor={melhorCusto}")
+    if terminou:
+        print(f"{nomeH}: inicial={custoInicial} | melhor={melhorCusto} | gap={gap * 100:.2f}%")
+    else:
+        print(f"{nomeH}: inicial={custoInicial} | melhor=NA | gap=NA (timeout de {TEMPO_LIMITE}s)")
     print(f"  {estatisticas.relatorio()}")
     print(f"  tempo heur={resultado['tempoHeuristica']:.4f}s | tempo bnb={resultado['tempoBAB']:.4f}s")
     print()
 
-# salvar CSV com nome baseado na instancia (sem .tsp)
+# salvar CSV em <nome>_resultados/ (ex.: vinicius_instancias -> vinicius_resultados)
+pastaInstancia = os.path.basename(os.path.dirname(os.path.abspath(caminho)))
+nomePessoa = pastaInstancia.removesuffix("_instancias")
+pastaResultados = f"{nomePessoa}_resultados"
+os.makedirs(pastaResultados, exist_ok=True)
+
+# nome do CSV baseado na instancia (sem .tsp)
 nomeBase = nome.replace(".tsp", "")
-nomeCsv = f"{nomeBase}.csv"
+nomeCsv = os.path.join(pastaResultados, f"{nomeBase}_{'_'.join(heuristicas.keys())}.csv")
 with open(nomeCsv, "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=resultados[0].keys())
     writer.writeheader()

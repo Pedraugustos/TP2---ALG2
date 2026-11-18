@@ -1,4 +1,5 @@
 import heapq
+import time
 
 def calcular_custo_rota(rota, matrizDistancias):
     """
@@ -99,7 +100,7 @@ def bound_caminho(matrizDistancias, n, caminho):
     return custoFixo + soma / 2.0
 
 
-def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estatisticas=None):
+def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estatisticas=None, tempoLimite=None):
     """
     Resolve o TSP por Branch and Bound.
     Usa a rota inicial recebida como limitante superior e o limitante
@@ -118,6 +119,8 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
         estatisticas: objeto EstatisticasBAB opcional; se fornecido, contabiliza
             nosGerados, nosExpandidos, nosPodados, nosFolha e
             nosPodaAntecipada.
+        tempoLimite: limite de tempo em segundos (opcional). Se estourar, a
+            busca e interrompida e o ultimo valor retornado e False.
 
     Saída:
         melhorRota: melhor ciclo hamiltoniano encontrado (fechado).
@@ -127,6 +130,10 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
     n = len(matrizDistancias) - 1
     INF = float("inf")
     inicio = 1
+
+    # controle de timeout: terminou=False indica busca abortada (otimo nao provado)
+    prazo = None if tempoLimite is None else time.perf_counter() + tempoLimite
+    terminou = True
 
     # rota inicial obrigatoria como limitante superior
     melhorRota = rotaInicial[:]
@@ -156,6 +163,11 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
 
     # expansao best-first: sempre retirar o noh de menor bound
     while filaPrioridade:
+        # timeout: interromper a busca mantendo as estatisticas acumuladas
+        if prazo is not None and time.perf_counter() > prazo:
+            terminou = False
+            break
+
         boundAtual, nivelAtual, _, custoFixo, caminho = heapq.heappop(filaPrioridade)
 
         # noh retirado da fila: conta como expandido
@@ -183,6 +195,11 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
         verticesRestantes = [v for v in range(1, n + 1) if v not in caminho]
 
         for proximo in verticesRestantes:
+            # timeout tambem dentro da ramificacao (cada filho chama bound_caminho)
+            if prazo is not None and time.perf_counter() > prazo:
+                terminou = False
+                break
+
             # aresta inexistente: ignorar (defensivo; matriz e completa)
             if matrizDistancias[ultimo][proximo] == INF:
                 continue
@@ -210,4 +227,7 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
                 if estatisticas is not None:
                     estatisticas.nosPodaAntecipada += 1
 
-    return melhorRota, melhorCusto, custoInicial
+        if not terminou:
+            break
+
+    return melhorRota, melhorCusto, custoInicial, terminou
