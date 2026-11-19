@@ -50,7 +50,7 @@ def _distancia_geo(xi, yi, xj, yj):
 
 def ler_instancia_tsplib(caminhoArquivo):
     """
-    Lê uma instância TSPLIB (EUC_2D ou GEO) e retorna os dados básicos.
+    Lê uma instância TSPLIB (EUC_2D, GEO ou ATT) e retorna os dados básicos.
 
     Entrada:
         caminhoArquivo: string com o caminho para o arquivo .tsp.
@@ -118,5 +118,87 @@ def ler_instancia_tsplib(caminhoArquivo):
             else:
                 xj, yj = coordenadas[j]
                 matrizDistancias[i][j] = funcaoDistancia(xi, yi, xj, yj)
+
+    return nomeInstancia, coordenadas, matrizDistancias
+
+def ler_explicit(caminhoArquivo):
+    """
+    Leitor específico para instâncias EXPLICIT (TSPLIB).
+
+    A instância utiliza:
+        - EDGE_WEIGHT_TYPE: EXPLICIT
+        - EDGE_WEIGHT_FORMAT: LOWER_DIAG_ROW
+
+    Retorna:
+        nomeInstancia: nome declarado na instância.
+        coordenadas: dicionário vazio (a instância não possui coordenadas).
+        matrizDistancias: matriz (n+1) x (n+1) simétrica de distâncias.
+    """
+
+    # abrir arquivo e ler todas as linhas
+    with open(caminhoArquivo, "r") as arquivo:
+        linhas = arquivo.readlines()
+
+    nomeInstancia = ""
+    dimensao = None
+    lendoPesos = False
+    numerosPeso = []
+
+    # varrer linhas
+    for linha in linhas:
+        linhaLimpa = linha.strip()
+
+        if not linhaLimpa:
+            continue
+
+        # cabecalhos
+        if linhaLimpa.startswith("NAME"):
+            nomeInstancia = linhaLimpa.split(":")[-1].strip()
+
+        elif linhaLimpa.startswith("DIMENSION"):
+            dimensao = int(linhaLimpa.split(":")[-1].strip())
+
+        # inicio da secao de pesos
+        elif linhaLimpa.startswith("EDGE_WEIGHT_SECTION"):
+            lendoPesos = True
+
+        # fim do arquivo
+        elif linhaLimpa.startswith("EOF"):
+            break
+
+        # leitura dos pesos (cada linha pode conter varios numeros)
+        elif lendoPesos:
+            for valor in linhaLimpa.split():
+                numerosPeso.append(int(valor))
+
+    # verificar se a dimensao foi encontrada
+    if dimensao is None:
+        raise ValueError("DIMENSION nao encontrada no arquivo.")
+
+    n = dimensao
+
+    # LOWER_DIAG_ROW possui n*(n+1)/2 valores
+    quantidadeEsperada = n * (n + 1) // 2
+
+    if len(numerosPeso) != quantidadeEsperada:
+        raise ValueError(
+            f"Quantidade incorreta de pesos: esperados {quantidadeEsperada}, encontrados {len(numerosPeso)}."
+        )
+
+    # construir matriz simetrica com o triangulo inferior
+    # linha e coluna 0 nao sao analisadas
+    matrizDistancias = [[0] * (n + 1) for _ in range(n + 1)]
+
+    k = 0
+    for i in range(1, n + 1):
+        for j in range(1, i + 1):
+            valor = numerosPeso[k]
+            k += 1
+
+            matrizDistancias[i][j] = valor
+            matrizDistancias[j][i] = valor
+
+    # a instancia EXPLICIT nao possui coordenadas
+    coordenadas = {}
 
     return nomeInstancia, coordenadas, matrizDistancias

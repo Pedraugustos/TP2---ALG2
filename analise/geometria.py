@@ -65,7 +65,7 @@ def entropia_espacial(coordenadas, bins=8):
 
 def grau_maximo_agm(matrizDistancias, n):
     """
-    Grau maximo de um no na Arvore Geradora Minima (presenca de hubs).
+    Grau máximo de um no na Árvore Geradora Minima (presenca de hubs).
     """
     if n <= 1:
         return 0
@@ -82,7 +82,7 @@ def grau_maximo_agm(matrizDistancias, n):
 
 def cv_vizinho_mais_proximo(matrizDistancias, n):
     """
-    Coeficiente de variação (desvio / média) das distancias ao vizinho
+    Coeficiente de variação (desvio / média) das distâncias ao vizinho
     mais proximo. Mede heterogeneidade local.
     """
     if n <= 1:
@@ -104,13 +104,20 @@ def cv_vizinho_mais_proximo(matrizDistancias, n):
 
 def extrair_features(coordenadas, matrizDistancias, n):
     """
-    Extrai todas as features geométricas/topológicas de uma instância.
-    Retorna dicionario com as cinco features.
+    Extrai todas as features de uma instância.
+    Retorna dicionário com as cinco features.
     """
+    if coordenadas:
+        geom = {
+            "aspectRatio": razao_de_aspecto(coordenadas),
+            "propFecho": proporcao_fecho(coordenadas),
+            "entropia": entropia_espacial(coordenadas)
+        }
+    else:
+        geom = {"aspectRatio": None, "propFecho": None, "entropia": None}
+
     return {
-        "aspectRatio": razao_de_aspecto(coordenadas),
-        "propFecho": proporcao_fecho(coordenadas),
-        "entropia": entropia_espacial(coordenadas),
-        "grauMaxMST": grau_maximo_agm(matrizDistancias, n),
-        "cvNN": cv_vizinho_mais_proximo(matrizDistancias, n),
+        **geom,
+        "grauMaxAGM": grau_maximo_agm(matrizDistancias, n),
+        "cvNN": cv_vizinho_mais_proximo(matrizDistancias, n)
     }
