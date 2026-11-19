@@ -140,10 +140,144 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
     custoInicial = calcular_custo_rota(rotaInicial, matrizDistancias)
     melhorCusto = custoInicial
 
-    '''
+    # limitante inferior da raiz
+    caminhoRaiz = [inicio]
+    if contador is not None:
+        with contador.medir("bound_caminho"):
+            boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
+    else:
+        boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
+
+    # fila de prioridade (min-heap) de subproblemas:
+    # (bound, nivel, contadorDesempate, custoFixo, caminhoParcial)
+    # o contador de desempate evita comparar listas quando bounds empatam
+    contadorDesempate = 0
+    filaPrioridade = []
+
+    heapq.heappush(
+        filaPrioridade,
+        (boundRaiz, len(caminhoRaiz), contadorDesempate, 0.0, caminhoRaiz)
+    )
+    contadorDesempate += 1
+
+    if estatisticas is not None:
+        estatisticas.nosGerados += 1
+
+    # expansao best-first: sempre retirar o noh de menor bound
+    while filaPrioridade:
+        # timeout: interromper a busca mantendo as estatisticas acumuladas
+        if prazo is not None and time.perf_counter() > prazo:
+            terminou = False
+            break
+
+        boundAtual, nivelAtual, _, custoFixo, caminho = heapq.heappop(filaPrioridade)
+
+        if estatisticas is not None:
+            estatisticas.nosExpandidos += 1
+
+        # poda: descartar noh se ja nao pode superar o melhor conhecido
+        if boundAtual >= melhorCusto:
+            if estatisticas is not None:
+                estatisticas.nosPodados += 1
+            continue
+
+        # folha: caminho completo, fechar ciclo e comparar
+        if nivelAtual == n:
+            if estatisticas is not None:
+                estatisticas.nosFolha += 1
+
+            custoRota = custoFixo + matrizDistancias[caminho[-1]][inicio]
+
+            if custoRota < melhorCusto:
+                melhorCusto = custoRota
+                melhorRota = caminho[:] + [inicio]
+
+            continue
+
+        ultimo = caminho[-1]
+        verticesRestantes = [v for v in range(1, n + 1) if v not in caminho]
+
+        for proximo in verticesRestantes:
+
+            if prazo is not None and time.perf_counter() > prazo:
+                terminou = False
+                break
+
+            if matrizDistancias[ultimo][proximo] == INF:
+                continue
+
+            novoCaminho = caminho + [proximo]
+            novoCustoFixo = custoFixo + matrizDistancias[ultimo][proximo]
+
+            if contador is not None:
+                with contador.medir("bound_caminho"):
+                    novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
+            else:
+                novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
+
+            # empilhar apenas se o bound do filho ainda permite bater o melhor
+            if novoBound < melhorCusto:
+                heapq.heappush(
+                    filaPrioridade,
+                    (novoBound, len(novoCaminho), contadorDesempate, novoCustoFixo, novoCaminho)
+                )
+                contadorDesempate += 1
+                if estatisticas is not None:
+                    estatisticas.nosGerados += 1
+
+            # poda antecipada: filho nao entra na fila
+            elif estatisticas is not None:
+                estatisticas.nosPodaAntecipada += 1
+
+        if not terminou:
+            break
+
+    return melhorRota, melhorCusto, custoInicial, terminou
+'''
+def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estatisticas=None, tempoLimite=None):
+    """
+    Resolve o TSP por Branch and Bound.
+    Usa a rota inicial recebida como limitante superior e o limitante
+    de caminho (duas menores arestas por vértice, respeitando arestas
+    já fixadas) como limitante inferior. Exploração é best-first: uma
+    fila de prioridade (heap) expande sempre o nó de menor bound.
+    Válido para instâncias métricas.
+
+    Entrada:
+        matrizDistancias: matriz (n+1) x (n+1) de distâncias euclidianas.
+        rotaInicial: lista de n+1 vértices (primeiro repetido no fim) com
+            uma rota fechada válida, usada como limitante superior inicial.
+        contador: objeto Contador opcional; se fornecido, mede o tempo de
+            bound_caminho (rotulo "bound_caminho") e do BAB (rotulo
+            "bnb_total" e "copia_caminho").
+        estatisticas: objeto EstatisticasBAB opcional; se fornecido, contabiliza
+            nosGerados, nosExpandidos, nosPodados, nosFolha e
+            nosPodaAntecipada.
+        tempoLimite: limite de tempo em segundos (opcional). Se estourar, a
+            busca e interrompida e o ultimo valor retornado e False.
+
+    Saída:
+        melhorRota: melhor ciclo hamiltoniano encontrado (fechado).
+        melhorCusto: custo do melhor ciclo.
+    """
+
+    n = len(matrizDistancias) - 1
+    INF = float("inf")
+    inicio = 1
+
+    # controle de timeout: terminou=False indica busca abortada (otimo nao provado)
+    prazo = None if tempoLimite is None else time.perf_counter() + tempoLimite
+    terminou = True
+
+    # rota inicial obrigatoria como limitante superior
+    melhorRota = rotaInicial[:]
+    custoInicial = calcular_custo_rota(rotaInicial, matrizDistancias)
+    melhorCusto = custoInicial
+
+    """
     OTIMIZAÇÃO:
     Ordenar os vizinhos de cada vertice uma unica vez, do menor para o maior custo de deslocamento.
-    '''
+    """
     vizinhosOrdenados = []
 
     for i in range(n + 1):
@@ -207,10 +341,10 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
 
             continue
 
-        '''
+        """
         OTIMIZAÇÃO
         Percorrer os vizinhos do vértice atual em ordem de menor peso.
-        '''
+        """
         ultimo = caminho[-1]
 
         for proximo in vizinhosOrdenados[ultimo]:
@@ -253,3 +387,4 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
             break
 
     return melhorRota, melhorCusto, custoInicial, terminou
+'''
