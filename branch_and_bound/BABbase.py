@@ -22,7 +22,7 @@ def calcular_custo_rota(rota, matrizDistancias):
     custo += matrizDistancias[rota[-1]][rota[0]]
     return custo
 
-
+'''
 def bound_caminho(matrizDistancias, n, caminho):
     """
     Calcula um limitante inferior, considerando as arestas já
@@ -98,7 +98,117 @@ def bound_caminho(matrizDistancias, n, caminho):
 
     # dividir por 2 para corrigir contagem dupla das arestas
     return custoFixo + soma / 2.0
+'''
+def precalcular_vizinhos_ordenados(matrizDistancias, n):
+    """
+    Ordena os vizinhos de cada vértice uma única vez,
+    do menor para o maior custo de aresta.
 
+    Essa estrutura será reutilizada em todos os cálculos do bound.
+    """
+    vizinhosOrdenados = [[] for _ in range(n + 1)]
+
+    for v in range(1, n + 1):
+        vizinhos = [u for u in range(1, n + 1) if u != v]
+
+        '''
+        OTIMIZAÇÃO
+        Ordenação de vizinhos mais baratos realizada apenas uma vez por vértice.
+        '''
+        vizinhos.sort(key=lambda u: matrizDistancias[v][u])
+
+        vizinhosOrdenados[v] = vizinhos
+
+    return vizinhosOrdenados
+
+
+def bound_caminho(matrizDistancias, n, caminho, vizinhosOrdenados=None):
+    """
+    Calcula o limitante inferior considerando as arestas já fixadas.
+
+    Reutiliza vizinhos previamente ordenados e seleciona somente
+    as arestas permitidas necessárias, sem criar e ordenar listas
+    de candidatos a cada chamada.
+    """
+
+    INF = float("inf")
+
+    # se a funcao for chamada isoladamente, sem a estrutura pre-calculada,
+    # ela ainda funciona. no B&B, passaremos a estrutura ja pronta.
+    if vizinhosOrdenados is None:
+        vizinhosOrdenados = precalcular_vizinhos_ordenados(
+            matrizDistancias, n
+        )
+
+    '''
+    OTIMIZAÇÃO:
+    Para a otimização funcionar, substituimos set por lista.
+    '''
+    visitado = [False] * (n + 1)
+    grau = [0] * (n + 1)
+
+    for v in caminho:
+        visitado[v] = True
+
+    custoFixo = 0.0
+
+    # contabilizar as arestas ja fixadas e seus graus.
+    for a, b in zip(caminho, caminho[1:]):
+        grau[a] += 1
+        grau[b] += 1
+        custoFixo += matrizDistancias[a][b]
+
+    # as pontas do caminho sao os unicos vertices visitados
+    # que ainda podem receber uma aresta adicional.
+    primeiraPonta = caminho[0]
+    ultimaPonta = caminho[-1]
+
+    soma = 0.0
+
+    for v in range(1, n + 1):
+
+        faltam = 2 - grau[v]
+
+        if faltam <= 0:
+            continue
+
+        '''
+        OTIMIZACAO:
+        Seleção direta das menores arestas permitidas, sem criar ou ordenar uma nova lista de candidatos.
+        '''
+        escolhidas = 0
+        somaVertice = 0.0
+
+        for u in vizinhosOrdenados[v]:
+
+            distancia = matrizDistancias[v][u]
+
+            if distancia == INF:
+                continue
+
+            # vertices internos do caminho ja estao saturados.
+            if visitado[u] and u != primeiraPonta and u != ultimaPonta:
+                continue
+
+            # nao permitir fechar o ciclo antes de visitar todos os vertices.
+            if v in (primeiraPonta, ultimaPonta) and u in (primeiraPonta, ultimaPonta) and len(caminho) > 1 and len(caminho) < n:
+                continue
+
+            somaVertice += distancia
+            escolhidas += 1
+
+            # ja encontramos todas as arestas necessarias.
+            if escolhidas == faltam:
+                break
+
+        # se nao existem arestas suficientes, o caminho e inviavel.
+        if escolhidas < faltam:
+            return INF
+
+        soma += somaVertice
+
+    # divisao por 2 corrige a contagem dupla das arestas faltantes.
+    return custoFixo + soma / 2.0
 
 def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estatisticas=None, tempoLimite=None):
     """
@@ -135,6 +245,12 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
     prazo = None if tempoLimite is None else time.perf_counter() + tempoLimite
     terminou = True
 
+    '''
+    OTIMIZACAO:
+    Pre-calculo dos vizinhos ordenados, realizado apenas uma vez.
+    '''
+    vizinhosOrdenados = precalcular_vizinhos_ordenados(matrizDistancias, n)
+
     # rota inicial obrigatoria como limitante superior
     melhorRota = rotaInicial[:]
     custoInicial = calcular_custo_rota(rotaInicial, matrizDistancias)
@@ -144,9 +260,11 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
     caminhoRaiz = [inicio]
     if contador is not None:
         with contador.medir("bound_caminho"):
-            boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
+            '''OTIMIZAÇÃO: vizinhosOrdenados já salva os melhores vizinhos'''
+            boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz, vizinhosOrdenados)
     else:
-        boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz)
+        '''OTIMIZAÇÃO: vizinhosOrdenados já salva os melhores vizinhos'''
+        boundRaiz = bound_caminho(matrizDistancias, n, caminhoRaiz, vizinhosOrdenados)
 
     # fila de prioridade (min-heap) de subproblemas:
     # (bound, nivel, contadorDesempate, custoFixo, caminhoParcial)
@@ -211,9 +329,11 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
 
             if contador is not None:
                 with contador.medir("bound_caminho"):
-                    novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
+                    '''OTIMIZAÇÃO: vizinhosOrdenados já salva os melhores vizinhos'''
+                    novoBound = bound_caminho(matrizDistancias, n, novoCaminho, vizinhosOrdenados)
             else:
-                novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
+                '''OTIMIZAÇÃO: vizinhosOrdenados já salva os melhores vizinhos'''
+                novoBound = bound_caminho(matrizDistancias, n, novoCaminho, vizinhosOrdenados)
 
             # empilhar apenas se o bound do filho ainda permite bater o melhor
             if novoBound < melhorCusto:

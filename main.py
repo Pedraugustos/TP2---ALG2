@@ -72,7 +72,7 @@ for nomeH, heur in heuristicas.items():
     "gap": gap,
     "terminou": terminou,
     "tempoHeuristica": contador.tempos.get(f"heuristica_{nomeH}", 0.0),
-    "tempoB&B": contador.tempos.get("bnb_total", 0.0),
+    "tempoBNB": contador.tempos.get("bnb_total", 0.0),
     "tempoBound": contador.tempos.get("bound_caminho", 0.0),
     "chamadasBound": contador.chamadas.get("bound_caminho", 0),
     "nosGerados": estatisticas.nosGerados,
@@ -89,7 +89,7 @@ for nomeH, heur in heuristicas.items():
     else:
         print(f"{nomeH}: inicial={custoInicial} | melhor=NA | gap=NA (timeout de {TEMPO_LIMITE}s)")
     print(f"  {estatisticas.relatorio()}")
-    print(f"  tempo heur={resultado['tempoHeuristica']:.4f}s | tempo bnb={resultado['tempoBAB']:.4f}s")
+    print(f"  tempo heur={resultado['tempoHeuristica']:.4f}s | tempo bnb={resultado['tempoBNB']:.4f}s")
     print()
 
 # salvar CSV em <nome>_resultados/ (EX.: vinicius_instancias -> vinicius_resultados)
