@@ -140,7 +140,20 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
     custoInicial = calcular_custo_rota(rotaInicial, matrizDistancias)
     melhorCusto = custoInicial
 
-    # limitante inferior inicial do caminho raiz [inicio]
+    '''
+    OTIMIZAÇÃO:
+    Ordenar os vizinhos de cada vertice uma unica vez, do menor para o maior custo de deslocamento.
+    '''
+    vizinhosOrdenados = []
+
+    for i in range(n + 1):
+        vizinhos = [j for j in range(1, n + 1) if j != i]
+
+        vizinhos.sort(key=lambda j: matrizDistancias[i][j])
+
+        vizinhosOrdenados.append(vizinhos)
+
+    # limitante inferior da raiz
     caminhoRaiz = [inicio]
     if contador is not None:
         with contador.medir("bound_caminho"):
@@ -153,11 +166,13 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
     # o contador de desempate evita comparar listas quando bounds empatam
     contadorDesempate = 0
     filaPrioridade = []
-    
-    heapq.heappush(filaPrioridade, (boundRaiz, len(caminhoRaiz), contadorDesempate, 0.0, caminhoRaiz))
+
+    heapq.heappush(
+        filaPrioridade,
+        (boundRaiz, len(caminhoRaiz), contadorDesempate, 0.0, caminhoRaiz)
+    )
     contadorDesempate += 1
 
-    # raiz conta como noh gerado (foi inserida na fila)
     if estatisticas is not None:
         estatisticas.nosGerados += 1
 
@@ -170,7 +185,6 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
 
         boundAtual, nivelAtual, _, custoFixo, caminho = heapq.heappop(filaPrioridade)
 
-        # noh retirado da fila: conta como expandido
         if estatisticas is not None:
             estatisticas.nosExpandidos += 1
 
@@ -184,23 +198,31 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
         if nivelAtual == n:
             if estatisticas is not None:
                 estatisticas.nosFolha += 1
+
             custoRota = custoFixo + matrizDistancias[caminho[-1]][inicio]
+
             if custoRota < melhorCusto:
                 melhorCusto = custoRota
                 melhorRota = caminho[:] + [inicio]
+
             continue
 
-        # noh interno: ramificar para todos os proximos vertices nao visitados
+        '''
+        OTIMIZAÇÃO
+        Percorrer os vizinhos do vértice atual em ordem de menor peso.
+        '''
         ultimo = caminho[-1]
-        verticesRestantes = [v for v in range(1, n + 1) if v not in caminho]
 
-        for proximo in verticesRestantes:
-            # timeout tambem dentro da ramificacao (cada filho chama bound_caminho)
+        for proximo in vizinhosOrdenados[ultimo]:
+
+            # ignorar vertices ja visitados
+            if proximo in caminho:
+                continue
+
             if prazo is not None and time.perf_counter() > prazo:
                 terminou = False
                 break
 
-            # aresta inexistente: ignorar (defensivo; matriz e completa)
             if matrizDistancias[ultimo][proximo] == INF:
                 continue
 
@@ -213,19 +235,19 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estati
             else:
                 novoBound = bound_caminho(matrizDistancias, n, novoCaminho)
 
-            # so empilhar se o bound do filho ainda permite bater o melhor
+            # empilhar apenas se o bound do filho ainda permite bater o melhor
             if novoBound < melhorCusto:
                 heapq.heappush(
                     filaPrioridade,
-                    (novoBound, len(novoCaminho), contadorDesempate, novoCustoFixo, novoCaminho),
+                    (novoBound, len(novoCaminho), contadorDesempate, novoCustoFixo, novoCaminho)
                 )
                 contadorDesempate += 1
                 if estatisticas is not None:
                     estatisticas.nosGerados += 1
-            else:
-                # poda antecipada: filho nao entra na fila
-                if estatisticas is not None:
-                    estatisticas.nosPodaAntecipada += 1
+
+            # poda antecipada: filho nao entra na fila
+            elif estatisticas is not None:
+                estatisticas.nosPodaAntecipada += 1
 
         if not terminou:
             break
