@@ -15,6 +15,7 @@ from heuristicas_aproximacoes.twice_around_the_tree import aproximacao_twice_aro
 from heuristicas_aproximacoes.convex_hull import heuristica_convex_hull
 from heuristicas_aproximacoes.gulosa import heuristica_gulosa
 
+from analise.memoria import MedidorMemoria
 
 TEMPO_LIMITE = 30 * 60  # segundos (30 min por execucao do B&B)
 
@@ -45,10 +46,12 @@ resultados = []
 for nomeH, heur in heuristicas.items():
     contador = Contador()
     estatisticas = EstatisticasBAB()
+    medidorMem = MedidorMemoria()
 
     # 1. executar e medir a heuristica
     with contador.medir(f"heuristica_{nomeH}"):
-        rota = heur(matriz, n)
+        with medidorMem.medir(f"heuristica_{nomeH}"):
+            rota = heur(matriz, n)
 
     # 2. executar o B&B usando a rota como limite superior inicial
     with contador.medir("bnb_total"):
@@ -93,6 +96,8 @@ for nomeH, heur in heuristicas.items():
         "nosFolha": estatisticas.nosFolha,
         "nosPodaAntecipada": estatisticas.nosPodaAntecipada,
         **features,
+        "picoMemHeuristica_MB": medidorMem.picos.get(f"heuristica_{nomeH}", 0.0),
+        "picoMemoriaBAB_MB": getattr(estatisticas, "picoMemoriaBAB_MB", 0.0)
     }
 
     resultados.append(resultado)
