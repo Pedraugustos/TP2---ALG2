@@ -36,7 +36,7 @@ print(f"Features: {features}\n")
 heuristicas = {
     "trivial": lambda m, n: construir_solucao_trivial(n),
     "gulosa": heuristica_gulosa,
-    #"convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
+    "convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
     "twice_around_the_tree": aproximacao_twice_around_the_tree,
     "christofides": aproximacao_christofides,
 }
