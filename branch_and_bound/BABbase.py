@@ -1,6 +1,6 @@
 import time
-import tracemalloc
-import gc
+# import tracemalloc   # MEMORIA
+# import gc            # MEMORIA
 
 def calcular_custo_rota(rota, matrizDistancias):
     """
@@ -267,9 +267,8 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
     if n < 3:
         raise ValueError("A instancia deve possuir pelo menos tres vertices.")
 
-    # limpar o lixo acumulado antes de comecar a medir memoria
-    gc.collect()
-    tracemalloc.start()
+    # gc.collect()                       # MEMORIA
+    # tracemalloc.start()                # MEMORIA
 
     # validar a solucao heuristica que sera usada como incumbente inicial
     rotaApertada = validar_rota_inicial(rotaInicial, n)
@@ -315,10 +314,10 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
     # verificar se a raiz pode ser descartada pelo limitante inferior
     boundRaiz = calcular_bound(caminho, 0.0, visitados)
     if boundRaiz >= melhorCusto:
-        _, picoBytes = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-        if estatisticas is not None:
-            estatisticas.picoMemoriaBAB_MB = picoBytes / (1024 * 1024)
+        # _, picoBytes = tracemalloc.get_traced_memory()   # MEMORIA
+        # tracemalloc.stop()                                # MEMORIA
+        # if estatisticas is not None:                      # MEMORIA
+        #     estatisticas.picoMemoriaBAB_MB = picoBytes / (1024 * 1024)  # MEMORIA
         return melhorRota, melhorCusto, custoInicial, True
 
     def busca(custoAtual):
@@ -395,9 +394,9 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
     # iniciar a exploracao a partir da raiz
     terminou = busca(0.0)
 
-    _, picoBytes = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-    if estatisticas is not None:
-        estatisticas.picoMemoriaBAB_MB = picoBytes / (1024 * 1024)
+    # _, picoBytes = tracemalloc.get_traced_memory()   # MEMORIA
+    # tracemalloc.stop()                                # MEMORIA
+    # if estatisticas is not None:                      # MEMORIA
+    #     estatisticas.picoMemoriaBAB_MB = picoBytes / (1024 * 1024)  # MEMORIA
 
     return melhorRota, melhorCusto, custoInicial, terminou

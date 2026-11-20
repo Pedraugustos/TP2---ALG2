@@ -97,7 +97,7 @@ for nomeH, heur in heuristicas.items():
         "nosPodaAntecipada": estatisticas.nosPodaAntecipada,
         **features,
         "picoMemHeuristica_MB": medidorMem.picos.get(f"heuristica_{nomeH}", 0.0),
-        "picoMemoriaBAB_MB": getattr(estatisticas, "picoMemoriaBAB_MB", 0.0)
+        #"picoMemoriaBAB_MB": getattr(estatisticas, "picoMemoriaBAB_MB", 0.0)
     }
 
     resultados.append(resultado)
