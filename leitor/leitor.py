@@ -99,6 +99,18 @@ def _ler_matriz_explicit(numeros, n, formato):
                 matriz[j][i] = valor
         return matriz
 
+    if formato == "UPPER_ROW":
+        # ordem: (1,2),(1,3)..(1,n), (2,3)..(2,n), ...
+        # (a diagonal principal nao e lida; assume-se 0)
+        k = 0
+        for i in range(1, n + 1):
+            for j in range(i + 1, n + 1):
+                valor = numeros[k]
+                k += 1
+                matriz[i][j] = valor
+                matriz[j][i] = valor  # espelha para o triangulo inferior
+        return matriz
+
     if formato == "UPPER_DIAG_ROW":
         # ordem: (1,1),(1,2),...,(1,n), (2,2),...,(2,n), ...
         k = 0

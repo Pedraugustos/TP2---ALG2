@@ -34,11 +34,11 @@ print(f"Features: {features}\n")
 
 # cada heuristica fornece a solucao inicial do B&B
 heuristicas = {
-    "trivial": lambda m, n: construir_solucao_trivial(n),
-    "gulosa": heuristica_gulosa,
-    #"convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
-    "twice_around_the_tree": aproximacao_twice_around_the_tree,
-    "christofides": aproximacao_christofides,
+    #"trivial": lambda m, n: construir_solucao_trivial(n),
+    #"gulosa": heuristica_gulosa,
+    "convex_hull": lambda m, n: heuristica_convex_hull(m, n, coords),
+    #"twice_around_the_tree": aproximacao_twice_around_the_tree,
+    #"christofides": aproximacao_christofides,
 }
 
 resultados = []
@@ -97,7 +97,7 @@ for nomeH, heur in heuristicas.items():
         "nosPodaAntecipada": estatisticas.nosPodaAntecipada,
         **features,
         "picoMemHeuristica_MB": medidorMem.picos.get(f"heuristica_{nomeH}", 0.0),
-        "picoMemoriaBAB_MB": getattr(estatisticas, "picoMemoriaBAB_MB", 0.0)
+        #"picoMemoriaBAB_MB": getattr(estatisticas, "picoMemoriaBAB_MB", 0.0)
     }
 
     resultados.append(resultado)
