@@ -1,28 +1,22 @@
-
 import sys
 import csv
 import os
-
 from analise.tempo import Contador, EstatisticasBAB
 from analise.geometria import extrair_features
-from leitor.leitor import ler_instancia_tsplib
-
 from branch_and_bound.BABbase import branch_and_bound_tsplib
-
+from leitor.leitor import ler_instancia_tsplib
 from heuristicas_aproximacoes.christofides import aproximacao_christofides
-from heuristicas_aproximacoes.trivial import construir_solucao_trivial
-from heuristicas_aproximacoes.twice_around_the_tree import aproximacao_twice_around_the_tree
 from heuristicas_aproximacoes.convex_hull import heuristica_convex_hull
 from heuristicas_aproximacoes.gulosa import heuristica_gulosa
-
+from heuristicas_aproximacoes.trivial import construir_solucao_trivial
+from heuristicas_aproximacoes.twice_around_the_tree import aproximacao_twice_around_the_tree
 from analise.memoria import MedidorMemoria
 
-TEMPO_LIMITE = 30 * 60  # segundos (30 min por execucao do B&B)
+
+# segundos (30 min por execucao do B&B)
+TEMPO_LIMITE = 30 * 60  
 
 caminho = sys.argv[1]
-#nome, coords, matriz = ler_instancia_tsplib(caminho)
-#n = len(coords)
-
 nome, coords, matriz = ler_instancia_tsplib(caminho)
 n = len(matriz) - 1
 
@@ -69,10 +63,7 @@ for nomeH, heur in heuristicas.items():
     else:
         gap = "NA"
 
-    melhoriaPercentual = (
-        (custoInicial - melhorCusto) / custoInicial * 100
-        if custoInicial > 0 else 0.0
-    )
+    melhoriaPercentual = ((custoInicial - melhorCusto) / custoInicial * 100 if custoInicial > 0 else 0.0)
 
     resultado = {
         "instancia": nome,
@@ -95,8 +86,7 @@ for nomeH, heur in heuristicas.items():
         "nosFolha": estatisticas.nosFolha,
         "nosPodaAntecipada": estatisticas.nosPodaAntecipada,
         **features,
-        "picoMemHeuristica_MB": medidorMem.picos.get(f"heuristica_{nomeH}", 0.0),
-        #"picoMemoriaBAB_MB": getattr(estatisticas, "picoMemoriaBAB_MB", 0.0)
+        "picoMemHeuristica_MB": medidorMem.picos.get(f"heuristica_{nomeH}", 0.0)
     }
 
     resultados.append(resultado)
@@ -112,11 +102,11 @@ for nomeH, heur in heuristicas.items():
     )
 
     if terminou:
-        print(f"  Gap em relacao ao otimo: {gap * 100:.2f}%")
+        print(f"Gap em relacao ao otimo: {gap * 100:.2f}%")
 
-    print(f"  {estatisticas.relatorio()}")
+    print(f"{estatisticas.relatorio()}")
     print(
-        f"  tempo heur={resultado['tempoHeuristica']:.4f}s | "
+        f"tempo heur={resultado['tempoHeuristica']:.4f}s | "
         f"tempo B&B={resultado['tempoBAB']:.4f}s | "
         f"tempo bound={resultado['tempoBound']:.4f}s"
     )
@@ -131,10 +121,7 @@ os.makedirs(pastaResultados, exist_ok=True)
 
 nomeBase = nome.replace(".tsp", "")
 nomeHeuristicas = "_".join(heuristicas.keys())
-nomeCsv = os.path.join(
-    pastaResultados,
-    f"{nomeBase}_{nomeHeuristicas}.csv"
-)
+nomeCsv = os.path.join(pastaResultados, f"{nomeBase}_{nomeHeuristicas}.csv")
 
 with open(nomeCsv, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=resultados[0].keys())
