@@ -1,10 +1,8 @@
 import time
-# import tracemalloc   # MEMORIA
-# import gc            # MEMORIA
 
 def calcular_custo_rota(rota, matrizDistancias):
     """
-    Calcula o custo total de uma rota, considerando o ciclo fechado.
+    Calcula o custo total de uma rota, considerando um ciclo.
 
     Entrada:
         rota: lista de vértices na ordem de visita, com o primeiro repetido no fim.
@@ -15,10 +13,7 @@ def calcular_custo_rota(rota, matrizDistancias):
     """
 
     # somar as arestas consecutivas, incluindo o fechamento do ciclo
-    return sum(
-        matrizDistancias[rota[i]][rota[i + 1]]
-        for i in range(len(rota) - 1)
-    )
+    return sum(matrizDistancias[rota[i]][rota[i + 1]] for i in range(len(rota) - 1))
 
 
 def validar_rota_inicial(rotaInicial, n):
@@ -41,66 +36,13 @@ def validar_rota_inicial(rotaInicial, n):
 
     # validar quantidade e unicidade dos vertices
     if len(rota) != n or len(set(rota)) != n:
-        raise ValueError("rotaInicial deve conter cada vertice exatamente uma vez.")
+        raise ValueError("rotaInicial deve conter cada vertice exatamente uma vez")
 
     if set(rota) != set(range(1, n + 1)):
-        raise ValueError("rotaInicial deve conter os vertices de 1 a n.")
+        raise ValueError("rotaInicial deve conter os vertices de 1 a n")
 
     # fechar o ciclo sem alterar a ordem produzida pela heuristica
     return rota + [rota[0]]
-
-
-def aplicar_dois_opt(rota, matrizDistancias, maxIteracoes=1000):
-    """
-    Melhora uma rota fechada com movimentos 2-opt.
-
-    Esta etapa é opcional. Para comparar corretamente as cinco estratégias
-    de warm-start do trabalho, use usarDoisOpt=False e preserve o custo da
-    rota produzida pela heurística escolhida.
-
-    Entrada:
-        rota: lista de n+1 vértices, com o primeiro repetido no fim.
-        matrizDistancias: matriz (n+1) x (n+1) de distâncias.
-        maxIteracoes: número máximo de passagens de melhoria.
-
-    Saída:
-        rotaMelhorada: ciclo hamiltoniano fechado.
-    """
-
-    # trabalhar somente com os vertices distintos
-    atual = rota[:-1]
-    n = len(atual)
-
-    # procurar trocas que reduzam o custo do ciclo
-    for _ in range(maxIteracoes):
-        melhorou = False
-
-        for i in range(n - 1):
-            for j in range(i + 2, n):
-                # evitar inverter o ciclo inteiro
-                if i == 0 and j == n - 1:
-                    continue
-
-                a, b = atual[i], atual[i + 1]
-                c = atual[j]
-                d = atual[(j + 1) % n]
-
-                # calcular a variacao de custo sem recalcular a rota inteira
-                delta = (
-                    matrizDistancias[a][c]
-                    + matrizDistancias[b][d]
-                    - matrizDistancias[a][b]
-                    - matrizDistancias[c][d]
-                )
-
-                if delta < -1e-12:
-                    atual[i + 1:j + 1] = reversed(atual[i + 1:j + 1])
-                    melhorou = True
-
-        if not melhorou:
-            break
-
-    return atual + [atual[0]]
 
 
 def construir_vizinhos_ordenados(matrizDistancias, n):
@@ -122,16 +64,12 @@ def construir_vizinhos_ordenados(matrizDistancias, n):
 
     # ordenar uma vez os vizinhos de cada vertice
     for v in range(1, n + 1):
-        vizinhosOrdenados[v] = sorted(
-            (u for u in range(1, n + 1) if u != v),
-            key=lambda u: matrizDistancias[v][u]
-        )
+        vizinhosOrdenados[v] = sorted((u for u in range(1, n + 1) if u != v), key=lambda u: matrizDistancias[v][u])
 
     return vizinhosOrdenados
 
 
-def bound_grau(matrizDistancias, n, caminho, custoFixo, visitados,
-               vizinhosOrdenados):
+def bound_grau(matrizDistancias, n, caminho, custoFixo, visitados, vizinhosOrdenados):
     """
     Calcula um limitante inferior baseado nos graus que ainda precisam ser
     completados no caminho parcial.
@@ -141,8 +79,6 @@ def bound_grau(matrizDistancias, n, caminho, custoFixo, visitados,
     para completar seu grau. Como cada aresta restante pode ser contabilizada
     por suas duas extremidades, divide-se essa soma por dois.
 
-    É um limitante inferior válido, porém mais barato que resolver um
-    Assignment Problem a cada nó.
 
     Entrada:
         matrizDistancias: matriz (n+1) x (n+1) de distâncias.
@@ -225,19 +161,13 @@ def _incrementar_estatistica(estatisticas, atributo, quantidade=1):
 
     # manter compatibilidade com diferentes objetos de estatisticas
     if estatisticas is not None and hasattr(estatisticas, atributo):
-        setattr(
-            estatisticas,
-            atributo,
-            getattr(estatisticas, atributo) + quantidade
-        )
+        setattr(estatisticas, atributo, getattr(estatisticas, atributo) + quantidade)
 
 
-def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
-                            usarDoisOpt=False, contador=None,
-                            estatisticas=None, tempoLimite=None):
+def branch_and_bound_tsplib(matrizDistancias, rotaInicial, contador=None, estatisticas=None, tempoLimite=None):
     """
-    Resolve exatamente o TSP simétrico por Branch and Bound, utilizando a
-    rota fornecida pela heurística do grupo como limitante superior inicial.
+    Resolve o TSP por Branch and Bound, utilizando a rota fornecida
+    pela heurística do grupo como limitante superior inicial.
 
     A busca utiliza DFS, ordenação de candidatos por distância e um limitante
     inferior baseado nos graus ainda não completados. As arestas não são
@@ -246,8 +176,6 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
     Entrada:
         matrizDistancias: matriz (n+1) x (n+1) de distâncias.
         rotaInicial: ciclo hamiltoniano produzido por uma heurística do grupo.
-        kCandidatos: mantido por compatibilidade; não restringe a busca exata.
-        usarDoisOpt: se True, melhora a rota inicial antes da busca.
         contador: objeto opcional para medir subrotinas.
         estatisticas: objeto opcional para contar nós gerados, expandidos e podados.
         tempoLimite: limite de execução em segundos (None = sem limite).
@@ -257,28 +185,14 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
         melhorCusto: custo da melhor rota encontrada.
         custoInicial: custo da rota heurística usada como warm-start.
         terminou: True se a otimalidade foi provada; False se houve timeout.
-
-    Observação:
-        Para comparar o impacto das cinco estratégias de warm-start exigidas
-        no trabalho, passe a rota de cada heurística e mantenha usarDoisOpt=False.
     """
 
     n = len(matrizDistancias) - 1
     if n < 3:
         raise ValueError("A instancia deve possuir pelo menos tres vertices.")
 
-    # gc.collect()                       # MEMORIA
-    # tracemalloc.start()                # MEMORIA
-
     # validar a solucao heuristica que sera usada como incumbente inicial
     rotaApertada = validar_rota_inicial(rotaInicial, n)
-
-    if usarDoisOpt:
-        if contador is not None:
-            with contador.medir("dois_opt"):
-                rotaApertada = aplicar_dois_opt(rotaApertada, matrizDistancias)
-        else:
-            rotaApertada = aplicar_dois_opt(rotaApertada, matrizDistancias)
 
     melhorRota = rotaApertada[:]
     custoInicial = calcular_custo_rota(melhorRota, matrizDistancias)
@@ -301,23 +215,13 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
         # medir o tempo gasto no calculo do limitante inferior, se solicitado
         if contador is not None:
             with contador.medir("bound_caminho"):
-                return bound_grau(
-                    matrizDistancias, n, caminhoAtual, custoAtual,
-                    visitadosAtual, vizinhosOrdenados
-                )
+                return bound_grau(matrizDistancias, n, caminhoAtual, custoAtual, visitadosAtual, vizinhosOrdenados)
 
-        return bound_grau(
-            matrizDistancias, n, caminhoAtual, custoAtual,
-            visitadosAtual, vizinhosOrdenados
-        )
+        return bound_grau(matrizDistancias, n, caminhoAtual, custoAtual, visitadosAtual, vizinhosOrdenados)
 
     # verificar se a raiz pode ser descartada pelo limitante inferior
     boundRaiz = calcular_bound(caminho, 0.0, visitados)
     if boundRaiz >= melhorCusto:
-        # _, picoBytes = tracemalloc.get_traced_memory()   # MEMORIA
-        # tracemalloc.stop()                                # MEMORIA
-        # if estatisticas is not None:                      # MEMORIA
-        #     estatisticas.picoMemoriaBAB_MB = picoBytes / (1024 * 1024)  # MEMORIA
         return melhorRota, melhorCusto, custoInicial, True
 
     def busca(custoAtual):
@@ -393,10 +297,5 @@ def branch_and_bound_tsplib(matrizDistancias, rotaInicial, kCandidatos=None,
 
     # iniciar a exploracao a partir da raiz
     terminou = busca(0.0)
-
-    # _, picoBytes = tracemalloc.get_traced_memory()   # MEMORIA
-    # tracemalloc.stop()                                # MEMORIA
-    # if estatisticas is not None:                      # MEMORIA
-    #     estatisticas.picoMemoriaBAB_MB = picoBytes / (1024 * 1024)  # MEMORIA
 
     return melhorRota, melhorCusto, custoInicial, terminou
