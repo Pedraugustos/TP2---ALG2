@@ -17,8 +17,8 @@ def _converter_para_radianos(coord):
     """
     Converte coordenada GEO (DDD.MM) da TSPLIB para radianos.
 
-    A parte inteira e o grau; a parte fracionaria (em centesimos de grau)
-    representa os minutos: 38.24 -> 38 graus e 24 minutos.
+    A parte inteira é o grau; a parte fracionária (em centésimos de grau)
+    representa os minutos: 38.24 = 38 graus e 24 minutos.
     """
 
     graus = int(coord)
@@ -29,7 +29,7 @@ def _converter_para_radianos(coord):
 
 def _distancia_geo(xi, yi, xj, yj):
     """
-    Distância geografica no padrão TSPLIB (formula oficial para GEO).
+    Distância geográfica no padrão TSPLIB (fórmula oficial para GEO).
     """
 
     # converter latitudes (x) e longitudes (y) para radianos
@@ -50,7 +50,7 @@ def _distancia_geo(xi, yi, xj, yj):
 
 def _distancia_att(xi, yi, xj, yj):
     """
-    Distância pseudo-euclidiana no padrão TSPLIB (formato ATT).
+    Distância quase euclidiana no padrão TSPLIB (formato ATT).
 
     A TSPLIB define ATT como:
         d = ceil( sqrt( (dx^2 + dy^2) / 10 ) )   se o valor for >= 1
@@ -69,21 +69,21 @@ def _distancia_att(xi, yi, xj, yj):
 
 def _ler_matriz_explicit(numeros, n, formato):
     """
-    Constroi a matriz (n+1) x (n+1) simetrica a partir da lista de
-    numeros da secao EDGE_WEIGHT_SECTION, conforme o formato.
+    Constroi a matriz (n+1) x (n+1) simétrica a partir da lista de
+    números da seção EDGE_WEIGHT_SECTION, conforme o formato.
 
     Formatos suportados:
-      - LOWER_DIAG_ROW: triangulo inferior com diagonal, linha por linha
-      - UPPER_DIAG_ROW: triangulo superior com diagonal, linha por linha
-      - FULL_MATRIX:    matriz completa n x n, linha por linha
+      - LOWER_DIAG_ROW: triângulo inferior com diagonal, linha por linha
+      - UPPER_DIAG_ROW: triângulo superior com diagonal, linha por linha
+      - FULL_MATRIX: matriz completa n x n, linha por linha
 
     Entrada:
-        numeros: lista de inteiros (todos os valores da secao).
-        n: numero de vertices.
+        numeros: lista de inteiros (todos os valores da seção).
+        n: número de vértices.
         formato: string com o EDGE_WEIGHT_FORMAT.
 
-    Saida:
-        matrizDistancias: matriz (n+1) x (n+1) simetrica.
+    Saída:
+        matrizDistancias: matriz (n+1) x (n+1) simétrica.
     """
 
     matriz = [[0] * (n + 1) for _ in range(n + 1)]
