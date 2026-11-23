@@ -3,7 +3,7 @@ import csv
 import os
 from analise.tempo import Contador, EstatisticasBAB
 from analise.geometria import extrair_features
-from branch_and_bound.BABbase import branch_and_bound_tsplib
+from branch_and_bound.bnb import branch_and_bound_tsplib
 from leitor.leitor import ler_instancia_tsplib
 from heuristicas_aproximacoes.christofides import aproximacao_christofides
 from heuristicas_aproximacoes.convex_hull import heuristica_convex_hull
