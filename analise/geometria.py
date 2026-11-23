@@ -1,6 +1,5 @@
 import math
 import networkx as nx
-
 from heuristicas_aproximacoes.convex_hull import fecho_convexo_monotone_chain
 
 
@@ -65,7 +64,7 @@ def entropia_espacial(coordenadas, bins=8):
 
 def grau_maximo_agm(matrizDistancias, n):
     """
-    Grau máximo de um no na Árvore Geradora Minima (presenca de hubs).
+    Grau máximo de um noh na Árvore Geradora Minima (presenca de hubs).
     """
     if n <= 1:
         return 0
@@ -82,8 +81,8 @@ def grau_maximo_agm(matrizDistancias, n):
 
 def cv_vizinho_mais_proximo(matrizDistancias, n):
     """
-    Coeficiente de variação (desvio / média) das distâncias ao vizinho
-    mais proximo. Mede heterogeneidade local.
+    Coeficiente de variação (desvio / média) das distâncias
+    ao vizinho mais proximo. Mede heterogeneidade local.
     """
     if n <= 1:
         return 0.0
