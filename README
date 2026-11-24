@@ -1,2 +1,67 @@
-EXEMPLO:
-python main.py vinicius_instancias\ulysses16.tsp
+# Problema do Caixeiro Viajante (TSP) com Branch and Bound
+
+## --> Pré-requisitos:
+
+- Python 3.12.
+- Instalação das bibliotecas necessárias (pelo terminal):
+
+```bash
+pip install networkx scipy
+```
+
+## --> Como executar?
+
+1. Abra o terminal na pasta principal do projeto (TP2---ALG2).
+2. Execute o seguinte comando, com o caminho da instância a ser resolvida:
+
+```bash
+python main.py instancias/nome_instancia.tsp
+```
+
+Exemplo:
+
+```bash
+python main.py instancias/gr21.tsp
+```
+
+## --> Funcionamento:
+
+Para encontrar soluções iniciais para o TSP, o programa utiliza algumas heurísticas e aproximações para grafos métricos. Em seguida, roda o algoritmo de **Branch and Bound** para (tentar) encontrar uma solução ótima, utilizando limitantes inferiores para reduzir as possibilidades de busca.
+
+Durante a execução:
+
+1. **Leitura da Instância:** lê a instância passada como entrada, a fim de obter informaçõespara a resolução do problema.
+
+2. **Execução das Heurísticas e Aproximações:** as estratégias utilizadas para encontrar rotas iniciais são:
+   - Solução Trivial;
+   - Heurística Gulosa (Vizinho Mais Próximo);
+   - Twice-Around-the-Tree;
+   - Christofides;
+   - Fecho Convexo (apenas para instâncias com coordenadas).
+
+3. **Branch and Bound:** para cada uma das soluções iniciais, executa o Branch and Bound, tomando a rota encontrada como solução viável inicial. Na busca, são calculados limitantes inferiores para identificar e descartar subproblemas que não podem produzir uma solução melhor do que a atual já analisada.
+
+4. **Análise dos Resultados:** por fim, dados como soluções encontradas, tempos de execução e estatísticas da busca são obtidos.
+
+## --> Resultados:
+
+Os resultados são impressos no terminal e armazenados em arquivos CSV, de acordo com a respectiva instânCia, na pasta `instancias_resultados`.
+
+Algumas informações registradas são:
+
+- Nome da instância e quantidade de vértices.
+- Heurística utilizada para obter a solução inicial.
+- Custo da rota inicial e melhor custo encontrado.
+- GAP entre a solução inicial e a melhor solução encontrada.
+- Indicação de término da execução.
+- Tempo gasto pela heurística e pelo Branch and Bound.
+- Tempo gasto pelo cálculo dos limitantes.
+- Quantidade de chamadas ao cálculo dos limitantes.
+- Quantidade de nós gerados, expandidos, podados e folhas alcançadas.
+- Outras estatísticas relacionadas às características da instância.
+
+## --> Observações:
+
+- O projeto foi desenvolvido e testado no Windows.
+- O tempo de execução varia proporcionalmente conforme a quantidade de vértices e das características da instância utilizada.
+- O algoritmo de Branch and Bound possui limite de execução de 30 minutos para cada exeção. Se tal limite for atingido, a busca é interrompida e o resultado é identificado como não concluído.
