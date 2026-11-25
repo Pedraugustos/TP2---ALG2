@@ -42,6 +42,7 @@ def _distancia_geo(xi, yi, xj, yj):
     q1 = math.cos(lon_i - lon_j)
     q2 = math.cos(lat_i - lat_j)
     q3 = math.cos(lat_i + lat_j)
+    # 6378.388 km eh o raio da terra
     d = 6378.388 * math.acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0
 
     # truncamento (int) e nao arredondamento
